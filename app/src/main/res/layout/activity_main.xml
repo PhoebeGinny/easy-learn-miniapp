@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 输入出生信息 -->
+    <EditText
+        android:id="@+id/et_name"
+        android:hint="名字 (可选)"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/et_date"
+        android:hint="生日 (YYYY-MM-DD)"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/et_time"
+        android:hint="出生时间 (HH:MM) — 本地时区"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Spinner
+        android:id="@+id/et_location"
+        android:hint="经度,纬度 (经度正向东)"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:spinnerMode="dropdown" />
+
+    <Button
+        android:id="@+id/btn_generate"
+        android:text="生成星盘"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- 显示星盘的自定义视图 -->
+    <com.example.demo.astrology.ChartView
+        android:id="@+id/chartView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <!-- 文本分析输出 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="200dp">
+        <TextView
+            android:id="@+id/tv_analysis"
+            android:padding="8dp"
+            android:textSize="14sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </ScrollView>
+
+</LinearLayout>
