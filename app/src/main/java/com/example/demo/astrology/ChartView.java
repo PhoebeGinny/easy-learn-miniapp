@@ -59,7 +59,7 @@ public class ChartView extends View {
         int cy = h / 2;
         int radius = size / 2;
 
-        // 外圈
+        // 外圈 test
         paintCircle.setColor(0xFF444444);
         canvas.drawCircle(cx, cy, radius, paintCircle);
 
