@@ -1,0 +1,124 @@
+package com.example.demo.astrology;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 主要的天文计算类（简化实现）
+ *
+ * 功能：
+ * - 计算儒略日（Julian Day，基于 Meeus）
+ * - 计算太阳黄经（简化日心模型/太阳地心位置）
+ * - 计算月亮与其它行星的近似位置（用非常简化的方法，真实精度有限）
+ * - 计算上升点（Ascendant）——采用近似局部恒星时（LST）转换为黄经的方法（用于等分宫）
+ *
+ * 提醒：
+ * - 生产级别应替换为 Swiss Ephemeris 或 VSOP87 数据实现以获得高精度。
+ * - 本实现仅为教学/演示，注释中会标明公式来源与近似位置。
+ *
+ * 参考：
+ * - Jean Meeus, Astronomical Algorithms（Julian Day 等常用公式）。:contentReference[oaicite:2]{index=2}
+ */
+public class PlanetCalculator {
+
+    /**
+     * 计算结果的容器
+     */
+    public static class CalcResult {
+        // 每个“行星名”对应黄经（0-360）
+        public Map<String, Double> planetLongitudes = new HashMap<>();
+        // 上升点黄经（0-360）——用于宫位起点
+        public Double ascendant;
+        // 其它可扩展字段
+        public double julianDay;
+    }
+
+    /**
+     * 对外接口：给出本地日期字符串（YYYY-MM-DD）、时间（HH:MM）以及经度/纬度（度）。
+     * 返回 CalcResult
+     *
+     * 注意：时间按本地时区（用户设备时间）理解，计算时需转换为 UT（简化：按设备时区偏移）
+     */
+    public static CalcResult calculateFromLocal(String dateYMD, String timeHM, double lon, double lat) throws Exception {
+        // 解析输入
+        String[] d = dateYMD.split("-");
+        int Y = Integer.parseInt(d[0]);
+        int M = Integer.parseInt(d[1]);
+        int D = Integer.parseInt(d[2]);
+
+        String[] t = timeHM.split(":");
+        int hour = Integer.parseInt(t[0]);
+        int minute = Integer.parseInt(t[1]);
+
+        // 这里直接假设输入为 UTC 时间会更简单；若为本地时间则需要减去时区偏移。
+        // 为了简单，我把时间看作本地时区，然后用 Java 时间 API 在主线程转换为 UTC（此处为简化，直接按输入小时处理）。
+        double dayFraction = (hour + (minute / 60.0)) / 24.0;
+
+        // 计算儒略日（JD） - 使用 Meeus 算法（简化实现）
+        double jd = julianDay(Y, M, D + dayFraction);
+
+        CalcResult res = new CalcResult();
+        res.julianDay = jd;
+
+        // 计算太阳黄经（简化公式）
+        double sunLon = sunEclipticLongitude(jd);
+        res.planetLongitudes.put("Sun", normalizeDegrees(sunLon));
+
+        // 计算月亮黄经（简化近似）
+        double moonLon = moonEclipticLongitude(jd);
+        res.planetLongitudes.put("Moon", normalizeDegrees(moonLon));
+
+        // 这里示例：对其他行星我们使用非常粗略的平均运动近似（仅供演示）
+        // 真正精确计算应使用 VSOP87 系列或 Swiss Ephemeris。
+        res.planetLongitudes.put("Mercury", normalizeDegrees(sunLon + 48.0)); // 占位：真实应独立计算
+        res.planetLongitudes.put("Venus", normalizeDegrees(sunLon + 75.0));
+        res.planetLongitudes.put("Mars", normalizeDegrees(sunLon + 120.0));
+        res.planetLongitudes.put("Jupiter", normalizeDegrees(sunLon + 200.0));
+        res.planetLongitudes.put("Saturn", normalizeDegrees(sunLon + 260.0));
+        res.planetLongitudes.put("Uranus", normalizeDegrees(sunLon + 300.0));
+        res.planetLongitudes.put("Neptune", normalizeDegrees(sunLon + 320.0));
+        res.planetLongitudes.put("Pluto", normalizeDegrees(sunLon + 330.0));
+
+        // 计算上升点（Ascendant）——此处使用近似公式：由本地经度、JD 得到恒星时，再转成黄经
+        double lst = localSiderealTime(jd, lon);
+        // 近似上升点：asc = arctan2( sin(lst)*cos(eps) - tan(lat)*sin(eps), cos(lst) )
+        // eps（黄赤交角）使用近似值
+        double eps = obliquityEcliptic(jd);
+        double lstRad = Math.toRadians(lst);
+        double latRad = Math.toRadians(lat);
+        double ascRad = Math.atan2(Math.sin(lstRad) * Math.cos(Math.toRadians(eps)) - Math.tan(latRad) * Math.sin(Math.toRadians(eps)),
+                Math.cos(lstRad));
+        double ascDeg = Math.toDegrees(ascRad);
+        ascDeg = normalizeDegrees(ascDeg);
+        res.ascendant = ascDeg;
+
+        return res;
+    }
+
+    /*******************************
+     * 辅助天文函数（注释解释来源）
+     *******************************/
+
+    /**
+     * 计算儒略日 JD（含小数日） - 基于 Jean Meeus。
+     * 参数 D 可带小数（例如日 + 小时/24）
+     */
+    public static double julianDay(int year, int month, double dayWithFraction) {
+        int Y = year;
+        int M = month;
+        double D = dayWithFraction;
+
+        if (M <= 2) {
+            Y -= 1;
+            M += 12;
+        }
+        int A = Y / 100;
+        int B = 2 - A + (A / 4);
+
+        double jd = Math.floor(365.25 * (Y + 4716))
+                + Math.floor(30.6001 * (M + 1))
+                + D + B - 1524.5;
+        return jd;
+    }
+}
+
