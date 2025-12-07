@@ -13,5 +13,14 @@ public class ZodiacUtils {
             "白羊 (Aries)","金牛 (Taurus)","双子 (Gemini)","巨蟹 (Cancer)","狮子 (Leo)","处女 (Virgo)",
             "天秤 (Libra)","天蝎 (Scorpio)","射手 (Sagittarius)","摩羯 (Capricorn)","水瓶 (Aquarius)","双鱼 (Pisces)"
     };
+
+    /**
+     * 根据黄经（0-360）返回星座索引 0-11
+     */
+    public static int zodiacIndex(double longitude) {
+        int idx = (int) (Math.floor(longitude / 30.0)) % 12;
+        if (idx < 0) idx += 12;
+        return idx;
+    }
 }
 
