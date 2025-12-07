@@ -120,5 +120,83 @@ public class PlanetCalculator {
                 + D + B - 1524.5;
         return jd;
     }
+
+    /**
+     * 近似太阳黄经（参考简化算法：通过太阳平近点、黄道周期近似）
+     * 说明：这里只是演示用的简化实现，不含大部分摄动项与精细项。
+     */
+    public static double sunEclipticLongitude(double jd) {
+        // 参考：简化太阳位置计算（近似）：
+        // 计算自 J2000.0 的世纪数
+        double T = (jd - 2451545.0) / 36525.0;
+
+        // 平近点角（Mean anomaly）M (deg)
+        double M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
+
+        // 平黄经 L0
+        double L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+
+        // 太阳光行差近似（C）
+        double C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(Math.toRadians(M))
+                + (0.019993 - 0.000101 * T) * Math.sin(Math.toRadians(2 * M))
+                + 0.000289 * Math.sin(Math.toRadians(3 * M));
+
+        double trueLong = L0 + C; // 真黄经近似
+        return normalizeDegrees(trueLong);
+    }
+
+    /**
+     * 近似月亮黄经（非常简化的近似），用于演示
+     * 精确月亮位置需要大量周期项（Meeus 中有详细项）
+     */
+    public static double moonEclipticLongitude(double jd) {
+        double T = (jd - 2451545.0) / 36525.0;
+        // 平黄经与平均月亮参数（近似）
+        double L0 = 218.3164477 + 481267.88123421 * T - 0.0015786 * T*T;
+        double M_sun = 357.5291092 + 35999.0502909 * T;
+        double M_moon = 134.9633964 + 477198.8675055 * T;
+        double D = 297.8501921 + 445267.1114034 * T;
+
+        // 取少数项叠加（示例取一两个项）
+        double lon = L0 + 6.289 * Math.sin(Math.toRadians(M_moon))  // 近点引起的项
+                + 1.274 * Math.sin(Math.toRadians(2 * D - M_moon))
+                + 0.658 * Math.sin(Math.toRadians(2 * D))
+                - 0.214 * Math.sin(Math.toRadians(2 * M_moon))
+                - 0.11 * Math.sin(Math.toRadians(D)); // 等
+        return normalizeDegrees(lon);
+    }
+
+    /**
+     * 近似黄赤交角（obliquity of the ecliptic）
+     */
+    public static double obliquityEcliptic(double jd) {
+        double T = (jd - 2451545.0) / 36525.0;
+        double eps0 = 23.439291 - 0.0130042 * T - 1.64e-7 * T*T + 5.04e-7 * T*T*T;
+        return eps0;
+    }
+
+    /**
+     * 近似地方恒星时（Local Sidereal Time），单位：度（0-360）
+     * 说明：此处给出常用近似公式，来源请参考 Meeus（本函数用于计算升交点/上升点等）
+     */
+    public static double localSiderealTime(double jd, double longitude) {
+        // 计算格林威治恒星时 GST（度）
+        double T = (jd - 2451545.0) / 36525.0;
+        double T0 = 280.46061837 + 360.98564736629 * (jd - 2451545.0)
+                + 0.000387933 * T*T - (T*T*T) / 38710000.0;
+        double GST = normalizeDegrees(T0);
+        // LST = GST + 经度（东经为正）
+        double LST = normalizeDegrees(GST + longitude);
+        return LST;
+    }
+
+    /**
+     * 角度标准化到 0-360
+     */
+    public static double normalizeDegrees(double deg) {
+        deg = deg % 360.0;
+        if (deg < 0) deg += 360.0;
+        return deg;
+    }
 }
 
